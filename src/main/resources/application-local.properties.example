@@ -1,0 +1,11 @@
+# -----------------------------------------------
+# HOW TO USE:
+# 1. Copy this file and rename it to: application-local.properties
+# 2. Fill in your local PostgreSQL credentials
+# 3. Never commit application-local.properties (it's gitignored)
+# -----------------------------------------------
+spring.datasource.url=jdbc:postgresql://localhost:5432/prehire
+spring.datasource.username=YOUR_PG_USERNAME
+spring.datasource.password=YOUR_PG_PASSWORD
+
+spring.jpa.hibernate.ddl-auto=validate
