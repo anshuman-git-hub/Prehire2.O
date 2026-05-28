@@ -53,23 +53,23 @@ DROP TYPE IF EXISTS feature_key_enum CASCADE;
 -- ENUMS
 -- =============================================================
 
-CREATE TYPE subscription_plan_enum AS ENUM ('free', 'starter', 'pro', 'enterprise');
-CREATE TYPE employment_type_enum  AS ENUM ('full_time', 'part_time', 'contract', 'internship');
-CREATE TYPE job_status_enum       AS ENUM ('draft', 'active', 'paused', 'closed');
-CREATE TYPE stage_status_enum     AS ENUM ('pending', 'in_progress', 'completed', 'failed', 'skipped');
-CREATE TYPE question_type_enum    AS ENUM ('yes_no', 'short_text', 'numeric', 'multiple_choice');
-CREATE TYPE interview_type_enum   AS ENUM ('online', 'offline', 'telephonic');
-CREATE TYPE interview_status_enum AS ENUM ('scheduled', 'completed', 'cancelled', 'rescheduled');
-CREATE TYPE recommendation_enum   AS ENUM ('hire', 'reject', 'hold');
-CREATE TYPE email_status_enum     AS ENUM ('pending', 'delivered', 'failed');
-CREATE TYPE psy_test_status_enum  AS ENUM ('pending', 'in_progress', 'completed');
-CREATE TYPE feature_key_enum      AS ENUM ('screening', 'online_test', 'video_interview', 'psychometric', 'panel_interview', 'chatbot');
+CREATE TYPE subscription_plan_enum AS ENUM ('FREE', 'STARTER', 'PRO', 'ENTERPRISE');
+CREATE TYPE employment_type_enum  AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP');
+CREATE TYPE job_status_enum       AS ENUM ('DRAFT', 'ACTIVE', 'PAUSED', 'CLOSED');
+CREATE TYPE stage_status_enum     AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'SKIPPED');
+CREATE TYPE question_type_enum    AS ENUM ('YES_NO', 'SHORT_TEXT', 'NUMERIC', 'MULTIPLE_CHOICE');
+CREATE TYPE interview_type_enum   AS ENUM ('ONLINE', 'OFFLINE', 'TELEPHONIC');
+CREATE TYPE interview_status_enum AS ENUM ('SCHEDULED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED');
+CREATE TYPE recommendation_enum   AS ENUM ('HIRE', 'REJECT', 'HOLD');
+CREATE TYPE email_status_enum     AS ENUM ('PENDING', 'DELIVERED', 'FAILED');
+CREATE TYPE psy_test_status_enum  AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+CREATE TYPE feature_key_enum      AS ENUM ('SCREENING', 'ONLINE_TEST', 'VIDEO_INTERVIEW', 'PSYCHOMETRIC', 'PANEL_INTERVIEW', 'CHATBOT');
 
 -- =============================================================
 -- 1. prehire_role  (no dependencies)
 -- =============================================================
 CREATE TABLE prehire_role (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              BIGSERIAL   PRIMARY KEY,
     name            VARCHAR(100) NOT NULL UNIQUE,
     display_name    VARCHAR(100) NOT NULL,
     description     TEXT,
@@ -90,7 +90,7 @@ CREATE TABLE tenant (
     slug                VARCHAR(100)            NOT NULL UNIQUE,
     logo_url            TEXT,
     admin_email         VARCHAR(255)            NOT NULL,
-    subscription_plan   subscription_plan_enum  NOT NULL DEFAULT 'free',
+    subscription_plan   subscription_plan_enum  NOT NULL DEFAULT 'FREE',
     is_active           BOOLEAN                 NOT NULL DEFAULT TRUE,
     created_at          TIMESTAMP               NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP               NOT NULL DEFAULT NOW()
@@ -102,7 +102,7 @@ COMMENT ON TABLE tenant IS 'Company/organisation onboarded to PreHire. All entit
 -- 3. stage  (no dependencies — lookup table)
 -- =============================================================
 CREATE TABLE stage (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              BIGSERIAL   PRIMARY KEY,
     name            VARCHAR(100) NOT NULL UNIQUE,
     display_name    VARCHAR(100) NOT NULL,
     sequence_order  INTEGER     NOT NULL,
@@ -119,7 +119,7 @@ COMMENT ON TABLE stage IS 'Lookup table for all hiring pipeline stages. Replaces
 CREATE TABLE "user" (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id       UUID        REFERENCES tenant(id) ON DELETE SET NULL,
-    role_id         UUID        NOT NULL REFERENCES prehire_role(id),
+    role_id         BIGINT      NOT NULL REFERENCES prehire_role(id),
     email           VARCHAR(255) NOT NULL,
     password_hash   TEXT        NOT NULL,
     first_name      VARCHAR(100) NOT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE job (
     department              VARCHAR(100),
     location                VARCHAR(255),
     employment_type         employment_type_enum,
-    status                  job_status_enum         NOT NULL DEFAULT 'draft',
+    status                  job_status_enum         NOT NULL DEFAULT 'DRAFT',
     published_at            TIMESTAMP,
     closed_at               TIMESTAMP,
     -- Persona fields (merged in from Personas table)
@@ -201,8 +201,8 @@ CREATE TABLE job_candidate_status (
     job_id                      UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
     candidate_id                UUID                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
     tenant_id                   UUID                NOT NULL REFERENCES tenant(id),
-    current_stage_id            UUID                NOT NULL REFERENCES stage(id),
-    stage_status                stage_status_enum   NOT NULL DEFAULT 'pending',
+    current_stage_id            BIGINT              NOT NULL REFERENCES stage(id),
+    stage_status                stage_status_enum   NOT NULL DEFAULT 'PENDING',
     screening_completed         BOOLEAN             NOT NULL DEFAULT FALSE,
     online_test_completed       BOOLEAN             NOT NULL DEFAULT FALSE,
     video_interview_completed   BOOLEAN             NOT NULL DEFAULT FALSE,
@@ -395,8 +395,8 @@ CREATE TABLE job_candidate_psy_test (
     test_link       TEXT                NOT NULL,
     email_sent      BOOLEAN             NOT NULL DEFAULT FALSE,
     email_sent_at   TIMESTAMP,
-    email_status    email_status_enum   NOT NULL DEFAULT 'pending',
-    status          psy_test_status_enum NOT NULL DEFAULT 'pending',
+    email_status    email_status_enum   NOT NULL DEFAULT 'PENDING',
+    status          psy_test_status_enum NOT NULL DEFAULT 'PENDING',
     started_at      TIMESTAMP,
     submitted_at    TIMESTAMP,
     trait_scores    JSONB,              -- e.g. {"EXT": {"score": 4.2, "percentage": 84}}
@@ -486,7 +486,7 @@ CREATE TABLE job_candidate_feedback (
     id              UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id          UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
     candidate_id    UUID                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
-    stage_id        UUID                NOT NULL REFERENCES stage(id),
+    stage_id        BIGINT              NOT NULL REFERENCES stage(id),
     given_by        UUID                NOT NULL REFERENCES "user"(id),
     rating          DECIMAL(3,2),       -- e.g. 4.20 / 5.00
     recommendation  recommendation_enum NOT NULL,
@@ -531,7 +531,7 @@ CREATE TABLE job_candidate_interview (
     duration_minutes        INTEGER,
     meeting_link            TEXT,
     venue                   TEXT,
-    status                  interview_status_enum   NOT NULL DEFAULT 'scheduled',
+    status                  interview_status_enum   NOT NULL DEFAULT 'SCHEDULED',
     candidate_email_sent    BOOLEAN                 NOT NULL DEFAULT FALSE,
     panel_email_sent        BOOLEAN                 NOT NULL DEFAULT FALSE,
     notes                   TEXT,
@@ -548,25 +548,25 @@ CREATE INDEX idx_jci_candidate_id ON job_candidate_interview(candidate_id);
 -- =============================================================
 
 -- Seed: prehire_role
-INSERT INTO prehire_role (id, name, display_name, description, is_system_role) VALUES
-    (gen_random_uuid(), 'prehire_admin',   'PreHire Admin',    'Super admin with full platform access', TRUE),
-    (gen_random_uuid(), 'tenant_admin',    'Tenant Admin',     'Admin for a specific company/tenant',   TRUE),
-    (gen_random_uuid(), 'recruiter',       'Recruiter',        'Creates jobs, manages candidates',      TRUE),
-    (gen_random_uuid(), 'hiring_manager',  'Hiring Manager',   'Reviews candidates, gives feedback',    TRUE),
-    (gen_random_uuid(), 'panel',           'Panel Member',     'Conducts interviews, gives feedback',   TRUE),
-    (gen_random_uuid(), 'candidate',       'Candidate',        'Job applicant on the platform',         TRUE);
+INSERT INTO prehire_role (name, display_name, description, is_system_role) VALUES
+    ('prehire_admin',   'PreHire Admin',    'Super admin with full platform access', TRUE),
+    ('tenant_admin',    'Tenant Admin',     'Admin for a specific company/tenant',   TRUE),
+    ('recruiter',       'Recruiter',        'Creates jobs, manages candidates',      TRUE),
+    ('hiring_manager',  'Hiring Manager',   'Reviews candidates, gives feedback',    TRUE),
+    ('panel',           'Panel Member',     'Conducts interviews, gives feedback',   TRUE),
+    ('candidate',       'Candidate',        'Job applicant on the platform',         TRUE);
 
 -- Seed: stage (pipeline stages in order)
-INSERT INTO stage (id, name, display_name, sequence_order, description, is_terminal) VALUES
-    (gen_random_uuid(), 'applied',           'Applied',            1,  'Candidate has applied to the job',           FALSE),
-    (gen_random_uuid(), 'screening',         'Screening',          2,  'Recruiter screening via questions',          FALSE),
-    (gen_random_uuid(), 'online_test',       'Online Test',        3,  'Aptitude / MCQ / Coding assessment',         FALSE),
-    (gen_random_uuid(), 'psychometric',      'Psychometric Test',  4,  'Big Five personality assessment',            FALSE),
-    (gen_random_uuid(), 'video_interview',   'Video Interview',    5,  'Async or live video interview',              FALSE),
-    (gen_random_uuid(), 'panel_interview',   'Panel Interview',    6,  'Interview with assigned panel members',      FALSE),
-    (gen_random_uuid(), 'offer',             'Offer',              7,  'Offer extended to candidate',                FALSE),
-    (gen_random_uuid(), 'hired',             'Hired',              8,  'Candidate accepted and hired',               TRUE),
-    (gen_random_uuid(), 'rejected',          'Rejected',           9,  'Candidate rejected from pipeline',           TRUE);
+INSERT INTO stage (name, display_name, sequence_order, description, is_terminal) VALUES
+    ('applied',           'Applied',            1,  'Candidate has applied to the job',           FALSE),
+    ('screening',         'Screening',          2,  'Recruiter screening via questions',          FALSE),
+    ('online_test',       'Online Test',        3,  'Aptitude / MCQ / Coding assessment',         FALSE),
+    ('psychometric',      'Psychometric Test',  4,  'Big Five personality assessment',            FALSE),
+    ('video_interview',   'Video Interview',    5,  'Async or live video interview',              FALSE),
+    ('panel_interview',   'Panel Interview',    6,  'Interview with assigned panel members',      FALSE),
+    ('offer',             'Offer',              7,  'Offer extended to candidate',                FALSE),
+    ('hired',             'Hired',              8,  'Candidate accepted and hired',               TRUE),
+    ('rejected',          'Rejected',           9,  'Candidate rejected from pipeline',           TRUE);
 
 -- =============================================================
 -- END OF SCHEMA
