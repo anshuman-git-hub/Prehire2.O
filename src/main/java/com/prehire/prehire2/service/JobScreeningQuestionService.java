@@ -4,7 +4,6 @@ import com.prehire.prehire2.entity.JobScreeningQuestion;
 import com.prehire.prehire2.exception.ResourceNotFoundException;
 import com.prehire.prehire2.repository.JobScreeningQuestionRepository;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,20 +15,21 @@ public class JobScreeningQuestionService {
 
     private final JobScreeningQuestionRepository jobScreeningQuestionRepository;
 
-    public JobScreeningQuestion getQuestionById(UUID id) {
+    public JobScreeningQuestion getQuestionById(Long id) {
         return jobScreeningQuestionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Screening question not found: " + id));
     }
 
-    public List<JobScreeningQuestion> getQuestionsByJob(UUID jobId) {
+    public List<JobScreeningQuestion> getQuestionsByJob(Long jobId) {
         return jobScreeningQuestionRepository.findByJob_IdOrderBySequenceOrderAsc(jobId);
     }
 
-    public List<JobScreeningQuestion> getQuestionsByTenant(UUID tenantId) {
+    public List<JobScreeningQuestion> getQuestionsByTenant(Long tenantId) {
         return jobScreeningQuestionRepository.findByTenant_Id(tenantId);
     }
 
-    public List<JobScreeningQuestion> getQuestionsCreatedBy(UUID createdById) {
+    public List<JobScreeningQuestion> getQuestionsCreatedBy(Long createdById) {
         return jobScreeningQuestionRepository.findByCreatedBy_Id(createdById);
     }
 }
+

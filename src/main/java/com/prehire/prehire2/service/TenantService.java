@@ -3,7 +3,6 @@ package com.prehire.prehire2.service;
 import com.prehire.prehire2.entity.Tenant;
 import com.prehire.prehire2.exception.ResourceNotFoundException;
 import com.prehire.prehire2.repository.TenantRepository;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +14,7 @@ public class TenantService {
 
     private final TenantRepository tenantRepository;
 
-    public Tenant getTenantById(UUID id) {
+    public Tenant getTenantById(Long id) {
         return tenantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found: " + id));
     }
@@ -34,3 +33,4 @@ public class TenantService {
         return tenantRepository.existsBySlug(slug);
     }
 }
+

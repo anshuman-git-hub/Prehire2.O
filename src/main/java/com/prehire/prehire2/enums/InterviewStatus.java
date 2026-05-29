@@ -6,3 +6,4 @@ public enum InterviewStatus {
     CANCELLED,
     RESCHEDULED
 }
+

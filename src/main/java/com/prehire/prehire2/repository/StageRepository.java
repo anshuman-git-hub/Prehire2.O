@@ -11,3 +11,4 @@ public interface StageRepository extends JpaRepository<Stage, Long> {
 
     List<Stage> findAllByOrderBySequenceOrderAsc();
 }
+

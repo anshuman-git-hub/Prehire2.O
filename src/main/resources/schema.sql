@@ -5,17 +5,18 @@
 -- =============================================================
 -- Run order matters due to FK dependencies.
 -- Execute this entire file once to set up your dev environment.
+-- NOTE: Flyway migrations live in src/main/resources/db/migration.
+--       Keep this file as a manual reset/reference script only.
 -- =============================================================
-
--- Enable UUID generation
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =============================================================
 -- DROP TABLES (for clean re-runs, reverse FK order)
 -- =============================================================
 DROP TABLE IF EXISTS psy_test_submission CASCADE;
 DROP TABLE IF EXISTS job_candidate_psy_test CASCADE;
+DROP TABLE IF EXISTS psy_test_trait_config CASCADE;
 DROP TABLE IF EXISTS psy_test_master CASCADE;
+DROP TABLE IF EXISTS psy_trait_master CASCADE;
 DROP TABLE IF EXISTS job_candidate_test_skill_result CASCADE;
 DROP TABLE IF EXISTS job_candidate_question_response CASCADE;
 DROP TABLE IF EXISTS job_candidate_test CASCADE;
@@ -85,7 +86,7 @@ COMMENT ON TABLE prehire_role IS 'Master role definitions managed by PreHire adm
 -- 2. tenant  (no dependencies)
 -- =============================================================
 CREATE TABLE tenant (
-    id                  UUID                    PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                  BIGSERIAL   PRIMARY KEY,
     name                VARCHAR(255)            NOT NULL,
     slug                VARCHAR(100)            NOT NULL UNIQUE,
     logo_url            TEXT,
@@ -117,8 +118,8 @@ COMMENT ON TABLE stage IS 'Lookup table for all hiring pipeline stages. Replaces
 -- 4. user  (depends on: tenant, prehire_role)
 -- =============================================================
 CREATE TABLE "user" (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID        REFERENCES tenant(id) ON DELETE SET NULL,
+    id              BIGSERIAL   PRIMARY KEY,
+    tenant_id       BIGINT        REFERENCES tenant(id) ON DELETE SET NULL,
     role_id         BIGINT      NOT NULL REFERENCES prehire_role(id),
     email           VARCHAR(255) NOT NULL,
     password_hash   TEXT        NOT NULL,
@@ -141,9 +142,9 @@ CREATE INDEX idx_user_email     ON "user"(email);
 -- 5. candidate  (depends on: user, tenant)
 -- =============================================================
 CREATE TABLE candidate (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id             UUID        NOT NULL UNIQUE REFERENCES "user"(id) ON DELETE CASCADE,
-    tenant_id           UUID        REFERENCES tenant(id) ON DELETE SET NULL,
+    id                  BIGSERIAL   PRIMARY KEY,
+    user_id             BIGINT        NOT NULL UNIQUE REFERENCES "user"(id) ON DELETE CASCADE,
+    tenant_id           BIGINT        REFERENCES tenant(id) ON DELETE SET NULL,
     phone               VARCHAR(20),
     location            VARCHAR(255),
     linkedin_url        TEXT,
@@ -163,10 +164,10 @@ CREATE INDEX idx_candidate_tenant_id ON candidate(tenant_id);
 -- 6. job  (depends on: tenant, user)
 -- =============================================================
 CREATE TABLE job (
-    id                      UUID                    PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id               UUID                    NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
-    created_by              UUID                    NOT NULL REFERENCES "user"(id),
-    hiring_manager_id       UUID                    REFERENCES "user"(id),
+    id                      BIGSERIAL   PRIMARY KEY,
+    tenant_id               BIGINT                    NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    created_by              BIGINT                    NOT NULL REFERENCES "user"(id),
+    hiring_manager_id       BIGINT                    REFERENCES "user"(id),
     title                   VARCHAR(255)            NOT NULL,
     description             TEXT                    NOT NULL,
     department              VARCHAR(100),
@@ -197,10 +198,10 @@ CREATE INDEX idx_job_status    ON job(status);
 -- 7. job_candidate_status  (depends on: job, candidate, tenant, stage)
 -- =============================================================
 CREATE TABLE job_candidate_status (
-    id                          UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id                      UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    candidate_id                UUID                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
-    tenant_id                   UUID                NOT NULL REFERENCES tenant(id),
+    id                          BIGSERIAL   PRIMARY KEY,
+    job_id                      BIGINT                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    candidate_id                BIGINT                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    tenant_id                   BIGINT                NOT NULL REFERENCES tenant(id),
     current_stage_id            BIGINT              NOT NULL REFERENCES stage(id),
     stage_status                stage_status_enum   NOT NULL DEFAULT 'PENDING',
     screening_completed         BOOLEAN             NOT NULL DEFAULT FALSE,
@@ -225,8 +226,8 @@ CREATE INDEX idx_jcs_stage_id     ON job_candidate_status(current_stage_id);
 -- NOTE: Pre-seeded. Not part of v1 release APIs.
 -- =============================================================
 CREATE TABLE feature (
-    id          UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id   UUID                NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    id          BIGSERIAL   PRIMARY KEY,
+    tenant_id   BIGINT                NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
     feature_key feature_key_enum    NOT NULL,
     is_enabled  BOOLEAN             NOT NULL DEFAULT FALSE,
     config      JSONB,
@@ -242,9 +243,9 @@ COMMENT ON TABLE feature IS 'Feature flags per tenant. Pre-seeded. Not exposed v
 -- Owner: Ajinkya
 -- =============================================================
 CREATE TABLE test_master (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id           UUID        NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
-    job_id              UUID        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    id                  BIGSERIAL   PRIMARY KEY,
+    tenant_id           BIGINT        NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    job_id              BIGINT        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
     test_name           VARCHAR(255) NOT NULL,
     description         TEXT,
     test_type           VARCHAR(50) NOT NULL,   -- MCQ / Coding / Aptitude
@@ -253,7 +254,7 @@ CREATE TABLE test_master (
     passing_marks       INTEGER     NOT NULL,
     passing_criteria    DECIMAL(5,2) NOT NULL,  -- minimum % to pass
     status              VARCHAR(50) NOT NULL DEFAULT 'Draft', -- Draft / Published
-    created_by          UUID        NOT NULL REFERENCES "user"(id),
+    created_by          BIGINT        NOT NULL REFERENCES "user"(id),
     created_at          TIMESTAMP   NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP   NOT NULL DEFAULT NOW()
 );
@@ -268,8 +269,8 @@ CREATE INDEX idx_test_master_tenant_id ON test_master(tenant_id);
 -- NOTE: skill_id references SkillMaster — to be added when skill module is built
 -- =============================================================
 CREATE TABLE test_skill_mapping (
-    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    test_id                 UUID        NOT NULL REFERENCES test_master(id) ON DELETE CASCADE,
+    id                      BIGSERIAL   PRIMARY KEY,
+    test_id                 BIGINT        NOT NULL REFERENCES test_master(id) ON DELETE CASCADE,
     skill_name              VARCHAR(255) NOT NULL,  -- denormalized until SkillMaster is built
     number_of_questions     INTEGER     NOT NULL,
     passing_marks           DECIMAL(5,2) NOT NULL,
@@ -284,8 +285,8 @@ COMMENT ON TABLE test_skill_mapping IS 'Skill-to-test mapping with question coun
 -- Owner: Ajinkya
 -- =============================================================
 CREATE TABLE question_bank (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    test_skill_mapping_id UUID      REFERENCES test_skill_mapping(id) ON DELETE SET NULL,
+    id                  BIGSERIAL   PRIMARY KEY,
+    test_skill_mapping_id BIGINT      REFERENCES test_skill_mapping(id) ON DELETE SET NULL,
     skill_name          VARCHAR(255) NOT NULL,  -- denormalized until SkillMaster is built
     question_text       TEXT        NOT NULL,
     question_type       VARCHAR(50) NOT NULL,  -- MCQ / Coding / Aptitude
@@ -301,10 +302,10 @@ COMMENT ON TABLE question_bank IS 'Repository of assessment questions. Owner: Aj
 -- Owner: Ajinkya
 -- =============================================================
 CREATE TABLE job_candidate_test (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    candidate_id        UUID        NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
-    job_id              UUID        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    test_id             UUID        NOT NULL REFERENCES test_master(id),
+    id                  BIGSERIAL   PRIMARY KEY,
+    candidate_id        BIGINT        NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    job_id              BIGINT        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    test_id             BIGINT        NOT NULL REFERENCES test_master(id),
     test_link           TEXT        NOT NULL,
     email_sent_status   BOOLEAN     NOT NULL DEFAULT FALSE,
     email_sent_at       TIMESTAMP,
@@ -323,12 +324,12 @@ CREATE INDEX idx_jct_job_id       ON job_candidate_test(job_id);
 -- Owner: Ajinkya
 -- =============================================================
 CREATE TABLE job_candidate_question_response (
-    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    candidate_test_id       UUID        NOT NULL REFERENCES job_candidate_test(id) ON DELETE CASCADE,
-    candidate_id            UUID        NOT NULL REFERENCES candidate(id),
-    job_id                  UUID        NOT NULL REFERENCES job(id),
-    test_skill_mapping_id   UUID        REFERENCES test_skill_mapping(id),
-    question_id             UUID        NOT NULL REFERENCES question_bank(id),
+    id                      BIGSERIAL   PRIMARY KEY,
+    candidate_test_id       BIGINT        NOT NULL REFERENCES job_candidate_test(id) ON DELETE CASCADE,
+    candidate_id            BIGINT        NOT NULL REFERENCES candidate(id),
+    job_id                  BIGINT        NOT NULL REFERENCES job(id),
+    test_skill_mapping_id   BIGINT        REFERENCES test_skill_mapping(id),
+    question_id             BIGINT        NOT NULL REFERENCES question_bank(id),
     selected_answer         TEXT,
     is_correct              BOOLEAN,
     obtained_marks          DECIMAL(5,2),
@@ -342,11 +343,11 @@ COMMENT ON TABLE job_candidate_question_response IS 'Candidate responses per que
 -- Owner: Ajinkya
 -- =============================================================
 CREATE TABLE job_candidate_test_skill_result (
-    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    candidate_id            UUID        NOT NULL REFERENCES candidate(id),
-    job_id                  UUID        NOT NULL REFERENCES job(id),
-    test_id                 UUID        NOT NULL REFERENCES test_master(id),
-    test_skill_mapping_id   UUID        NOT NULL REFERENCES test_skill_mapping(id),
+    id                      BIGSERIAL   PRIMARY KEY,
+    candidate_id            BIGINT        NOT NULL REFERENCES candidate(id),
+    job_id                  BIGINT        NOT NULL REFERENCES job(id),
+    test_id                 BIGINT        NOT NULL REFERENCES test_master(id),
+    test_skill_mapping_id   BIGINT        NOT NULL REFERENCES test_skill_mapping(id),
     skill_name              VARCHAR(255) NOT NULL,  -- denormalized
     total_questions         INTEGER     NOT NULL,
     attempted_questions     INTEGER     NOT NULL DEFAULT 0,
@@ -362,36 +363,66 @@ CREATE TABLE job_candidate_test_skill_result (
 COMMENT ON TABLE job_candidate_test_skill_result IS 'Skill-wise test result summary per candidate. Owner: Ajinkya.';
 
 -- =============================================================
--- 15. psy_test_master  (depends on: tenant, job, user)
+-- 15. psy_trait_master  (no dependencies — seeded lookup table)
+-- Owner: Anshuman
+-- =============================================================
+CREATE TABLE psy_trait_master (
+    id              BIGSERIAL   PRIMARY KEY,
+    code            VARCHAR(20)  NOT NULL UNIQUE,
+    name            VARCHAR(100) NOT NULL UNIQUE,
+    description     TEXT,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE psy_trait_master IS 'Seeded Big Five personality traits (OCEAN) used for psychometric configuration.';
+
+-- =============================================================
+-- 16. psy_test_master  (depends on: tenant, job, user)
 -- Owner: Anshuman
 -- =============================================================
 CREATE TABLE psy_test_master (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id   UUID        NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
-    job_id      UUID        NOT NULL UNIQUE REFERENCES job(id) ON DELETE CASCADE,
-    created_by  UUID        NOT NULL REFERENCES "user"(id),
+    id          BIGSERIAL   PRIMARY KEY,
+    tenant_id   BIGINT        NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    job_id      BIGINT        NOT NULL UNIQUE REFERENCES job(id) ON DELETE CASCADE,
+    created_by  BIGINT        NOT NULL REFERENCES "user"(id),
     name        VARCHAR(255) NOT NULL,
-    min_passing JSONB,           -- e.g. {"EXT": 3, "AGR": 2}
     total_ques  INTEGER     NOT NULL,
-    traits      TEXT[]      NOT NULL, -- Big Five traits configured for this test
     time_limit  INTEGER,             -- in minutes, NULL = no limit
     created_at  TIMESTAMP   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP   NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE psy_test_master IS 'Psychometric test configuration per job (1 config per job). Owner: Anshuman.';
+COMMENT ON TABLE psy_test_master IS 'Psychometric test configuration per job (1 config per job). Trait rules are stored in psy_test_trait_config.';
 CREATE INDEX idx_psy_test_master_job_id    ON psy_test_master(job_id);
 CREATE INDEX idx_psy_test_master_tenant_id ON psy_test_master(tenant_id);
 
 -- =============================================================
--- 16. job_candidate_psy_test  (depends on: tenant, job, candidate, psy_test_master)
+-- 17. psy_test_trait_config  (depends on: psy_test_master, psy_trait_master)
+-- Owner: Anshuman
+-- =============================================================
+CREATE TABLE psy_test_trait_config (
+    id                  BIGSERIAL   PRIMARY KEY,
+    psy_test_id         BIGINT      NOT NULL REFERENCES psy_test_master(id) ON DELETE CASCADE,
+    trait_id            BIGINT      NOT NULL REFERENCES psy_trait_master(id),
+    question_count      INTEGER     NOT NULL,
+    passing_score       DECIMAL(5,2) NOT NULL,
+    created_at          TIMESTAMP   NOT NULL DEFAULT NOW(),
+    UNIQUE (psy_test_id, trait_id)
+);
+
+COMMENT ON TABLE psy_test_trait_config IS 'Per-trait psychometric test configuration: question count and passing score.';
+CREATE INDEX idx_pttc_psy_test_id ON psy_test_trait_config(psy_test_id);
+CREATE INDEX idx_pttc_trait_id    ON psy_test_trait_config(trait_id);
+
+-- =============================================================
+-- 18. job_candidate_psy_test  (depends on: tenant, job, candidate, psy_test_master)
 -- Owner: Anshuman
 -- =============================================================
 CREATE TABLE job_candidate_psy_test (
-    id              UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID                NOT NULL REFERENCES tenant(id),
-    job_id          UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    candidate_id    UUID                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    id              BIGSERIAL   PRIMARY KEY,
+    tenant_id       BIGINT                NOT NULL REFERENCES tenant(id),
+    job_id          BIGINT                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    candidate_id    BIGINT                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
     test_link       TEXT                NOT NULL,
     email_sent      BOOLEAN             NOT NULL DEFAULT FALSE,
     email_sent_at   TIMESTAMP,
@@ -413,19 +444,19 @@ CREATE INDEX idx_jcpt_candidate_id ON job_candidate_psy_test(candidate_id);
 CREATE INDEX idx_jcpt_job_id       ON job_candidate_psy_test(job_id);
 
 -- =============================================================
--- 17. psy_test_submission  (depends on: job_candidate_psy_test, tenant, job, candidate)
+-- 19. psy_test_submission  (depends on: job_candidate_psy_test, tenant, job, candidate)
 -- Owner: Anshuman
 -- NOTE: question_id and variation_id reference Question/Variation tables
 --       to be added when those tables are shared from NeonDB
 -- =============================================================
 CREATE TABLE psy_test_submission (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    psy_test_id     UUID        NOT NULL REFERENCES job_candidate_psy_test(id) ON DELETE CASCADE,
-    tenant_id       UUID        NOT NULL REFERENCES tenant(id),
-    job_id          UUID        NOT NULL REFERENCES job(id),
-    candidate_id    UUID        NOT NULL REFERENCES candidate(id),
-    question_id     UUID        NOT NULL,    -- FK to Question table (pending — to be added)
-    variation_id    UUID        NOT NULL,    -- FK to Variation table (pending — to be added)
+    id              BIGSERIAL   PRIMARY KEY,
+    psy_test_id     BIGINT        NOT NULL REFERENCES job_candidate_psy_test(id) ON DELETE CASCADE,
+    tenant_id       BIGINT        NOT NULL REFERENCES tenant(id),
+    job_id          BIGINT        NOT NULL REFERENCES job(id),
+    candidate_id    BIGINT        NOT NULL REFERENCES candidate(id),
+    question_id     BIGINT        NOT NULL,    -- FK to Question table (pending — to be added)
+    variation_id    BIGINT        NOT NULL,    -- FK to Variation table (pending — to be added)
     response        VARCHAR(50) NOT NULL,    -- strongly_agree | agree | neutral | disagree | strongly_disagree
     answered_at     TIMESTAMP   NOT NULL DEFAULT NOW(),
     created_at      TIMESTAMP   NOT NULL DEFAULT NOW()
@@ -436,14 +467,14 @@ CREATE INDEX idx_pts_psy_test_id  ON psy_test_submission(psy_test_id);
 CREATE INDEX idx_pts_candidate_id ON psy_test_submission(candidate_id);
 
 -- =============================================================
--- 18. job_screening_questions  (depends on: tenant, job, user)
+-- 20. job_screening_questions  (depends on: tenant, job, user)
 -- Owner: Tanish
 -- =============================================================
 CREATE TABLE job_screening_questions (
-    id              UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID                NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
-    job_id          UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    created_by      UUID                NOT NULL REFERENCES "user"(id),
+    id              BIGSERIAL   PRIMARY KEY,
+    tenant_id       BIGINT                NOT NULL REFERENCES tenant(id) ON DELETE CASCADE,
+    job_id          BIGINT                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    created_by      BIGINT                NOT NULL REFERENCES "user"(id),
     question_text   TEXT                NOT NULL,
     question_type   question_type_enum  NOT NULL,
     options         TEXT[],             -- only for multiple_choice
@@ -458,15 +489,15 @@ CREATE INDEX idx_jsq_job_id    ON job_screening_questions(job_id);
 CREATE INDEX idx_jsq_tenant_id ON job_screening_questions(tenant_id);
 
 -- =============================================================
--- 19. job_candidate_screening_submission  (depends on: tenant, job, job_screening_questions, candidate)
+-- 21. job_candidate_screening_submission  (depends on: tenant, job, job_screening_questions, candidate)
 -- Owner: Tanish
 -- =============================================================
 CREATE TABLE job_candidate_screening_submission (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id           UUID        NOT NULL REFERENCES tenant(id),
-    job_id              UUID        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    question_id         UUID        NOT NULL REFERENCES job_screening_questions(id) ON DELETE CASCADE,
-    candidate_id        UUID        NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    id                  BIGSERIAL   PRIMARY KEY,
+    tenant_id           BIGINT        NOT NULL REFERENCES tenant(id),
+    job_id              BIGINT        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    question_id         BIGINT        NOT NULL REFERENCES job_screening_questions(id) ON DELETE CASCADE,
+    candidate_id        BIGINT        NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
     answer_text         TEXT,       -- for yes_no / short_text / numeric
     selected_options    TEXT[],     -- for multiple_choice
     submitted_at        TIMESTAMP   NOT NULL DEFAULT NOW(),
@@ -479,15 +510,15 @@ CREATE INDEX idx_jcss_candidate_id ON job_candidate_screening_submission(candida
 CREATE INDEX idx_jcss_job_id       ON job_candidate_screening_submission(job_id);
 
 -- =============================================================
--- 20. job_candidate_feedback  (depends on: job, candidate, stage, user)
+-- 22. job_candidate_feedback  (depends on: job, candidate, stage, user)
 -- Owner: Priyanshi
 -- =============================================================
 CREATE TABLE job_candidate_feedback (
-    id              UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id          UUID                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    candidate_id    UUID                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    id              BIGSERIAL   PRIMARY KEY,
+    job_id          BIGINT                NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    candidate_id    BIGINT                NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
     stage_id        BIGINT              NOT NULL REFERENCES stage(id),
-    given_by        UUID                NOT NULL REFERENCES "user"(id),
+    given_by        BIGINT                NOT NULL REFERENCES "user"(id),
     rating          DECIMAL(3,2),       -- e.g. 4.20 / 5.00
     recommendation  recommendation_enum NOT NULL,
     feedback_text   TEXT,
@@ -500,14 +531,14 @@ CREATE INDEX idx_jcf_job_id       ON job_candidate_feedback(job_id);
 CREATE INDEX idx_jcf_candidate_id ON job_candidate_feedback(candidate_id);
 
 -- =============================================================
--- 21. job_panel  (depends on: job, user)
+-- 23. job_panel  (depends on: job, user)
 -- Owner: Priyanshi
 -- =============================================================
 CREATE TABLE job_panel (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id          UUID        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    panel_user_id   UUID        NOT NULL REFERENCES "user"(id),
-    assigned_by     UUID        REFERENCES "user"(id),   -- recruiter who assigned
+    id              BIGSERIAL   PRIMARY KEY,
+    job_id          BIGINT        NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    panel_user_id   BIGINT        NOT NULL REFERENCES "user"(id),
+    assigned_by     BIGINT        REFERENCES "user"(id),   -- recruiter who assigned
     created_at      TIMESTAMP   NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP   NOT NULL DEFAULT NOW(),
     UNIQUE (job_id, panel_user_id)
@@ -517,14 +548,14 @@ COMMENT ON TABLE job_panel IS 'Panel members assigned to a job. Owner: Priyanshi
 CREATE INDEX idx_jp_job_id ON job_panel(job_id);
 
 -- =============================================================
--- 22. job_candidate_interview  (depends on: job, candidate, user)
+-- 24. job_candidate_interview  (depends on: job, candidate, user)
 -- Owner: Priyanshi
 -- =============================================================
 CREATE TABLE job_candidate_interview (
-    id                      UUID                    PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id                  UUID                    NOT NULL REFERENCES job(id) ON DELETE CASCADE,
-    candidate_id            UUID                    NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
-    scheduled_by            UUID                    NOT NULL REFERENCES "user"(id),
+    id                      BIGSERIAL   PRIMARY KEY,
+    job_id                  BIGINT                    NOT NULL REFERENCES job(id) ON DELETE CASCADE,
+    candidate_id            BIGINT                    NOT NULL REFERENCES candidate(id) ON DELETE CASCADE,
+    scheduled_by            BIGINT                    NOT NULL REFERENCES "user"(id),
     interview_stage         VARCHAR(100)            NOT NULL,  -- Technical / HR / Final
     interview_type          interview_type_enum     NOT NULL,
     scheduled_at            TIMESTAMP               NOT NULL,
@@ -568,6 +599,15 @@ INSERT INTO stage (name, display_name, sequence_order, description, is_terminal)
     ('hired',             'Hired',              8,  'Candidate accepted and hired',               TRUE),
     ('rejected',          'Rejected',           9,  'Candidate rejected from pipeline',           TRUE);
 
+-- Seed: psy_trait_master (Big Five / OCEAN traits)
+INSERT INTO psy_trait_master (code, name, description) VALUES
+    ('O', 'Openness', 'Imagination, curiosity, creativity, and openness to new experiences'),
+    ('C', 'Conscientiousness', 'Organization, dependability, discipline, and goal orientation'),
+    ('E', 'Extraversion', 'Sociability, assertiveness, energy, and comfort with interaction'),
+    ('A', 'Agreeableness', 'Cooperation, empathy, trust, and interpersonal warmth'),
+    ('N', 'Neuroticism', 'Emotional sensitivity, stress response, and tendency toward negative affect');
+
 -- =============================================================
 -- END OF SCHEMA
 -- =============================================================
+

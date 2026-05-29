@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,9 +19,9 @@ import lombok.Setter;
 public class QuestionBank extends BaseCreatedEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_skill_mapping_id")
@@ -43,3 +42,4 @@ public class QuestionBank extends BaseCreatedEntity {
     @Column(name = "marks", nullable = false)
     private Integer marks;
 }
+

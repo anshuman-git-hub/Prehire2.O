@@ -1,12 +1,11 @@
 package com.prehire.prehire2.controller;
 
+import com.prehire.prehire2.dto.ScreeningSubmissionDetailResponse;
 import com.prehire.prehire2.dto.ScreeningSubmissionRequest;
 import com.prehire.prehire2.dto.ScreeningSubmissionResponse;
-import com.prehire.prehire2.entity.JobCandidateScreeningSubmission;
 import com.prehire.prehire2.service.JobCandidateScreeningSubmissionService;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,8 +39,8 @@ public class ScreeningController {
      * Get all submissions for a job.
      */
     @GetMapping("/job/{jobId}")
-    public ResponseEntity<List<JobCandidateScreeningSubmission>> getByJob(
-            @PathVariable UUID jobId) {
+    public ResponseEntity<List<ScreeningSubmissionDetailResponse>> getByJob(
+            @PathVariable Long jobId) {
 
         return ResponseEntity.ok(submissionService.getSubmissionsByJob(jobId));
     }
@@ -51,8 +50,8 @@ public class ScreeningController {
      * Get all submissions by a candidate.
      */
     @GetMapping("/candidate/{candidateId}")
-    public ResponseEntity<List<JobCandidateScreeningSubmission>> getByCandidate(
-            @PathVariable UUID candidateId) {
+    public ResponseEntity<List<ScreeningSubmissionDetailResponse>> getByCandidate(
+            @PathVariable Long candidateId) {
 
         return ResponseEntity.ok(submissionService.getSubmissionsByCandidate(candidateId));
     }
@@ -62,10 +61,11 @@ public class ScreeningController {
      * Get all submissions for a specific candidate on a specific job.
      */
     @GetMapping("/job/{jobId}/candidate/{candidateId}")
-    public ResponseEntity<List<JobCandidateScreeningSubmission>> getByJobAndCandidate(
-            @PathVariable UUID jobId,
-            @PathVariable UUID candidateId) {
+    public ResponseEntity<List<ScreeningSubmissionDetailResponse>> getByJobAndCandidate(
+            @PathVariable Long jobId,
+            @PathVariable Long candidateId) {
 
         return ResponseEntity.ok(submissionService.getSubmissionsByJobAndCandidate(jobId, candidateId));
     }
 }
+

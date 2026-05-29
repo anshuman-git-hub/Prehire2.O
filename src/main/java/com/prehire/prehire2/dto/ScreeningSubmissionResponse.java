@@ -9,3 +9,4 @@ public class ScreeningSubmissionResponse {
     private String message;
     private int totalAnswersSubmitted;
 }
+

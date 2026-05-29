@@ -5,3 +5,4 @@ public enum PsyTestStatus {
     IN_PROGRESS,
     COMPLETED
 }
+

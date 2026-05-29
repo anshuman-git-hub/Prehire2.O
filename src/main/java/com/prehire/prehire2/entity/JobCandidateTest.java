@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,9 +20,9 @@ import lombok.Setter;
 public class JobCandidateTest extends BaseCreatedEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "candidate_id", nullable = false)
@@ -55,3 +54,4 @@ public class JobCandidateTest extends BaseCreatedEntity {
     @Column(name = "final_score", nullable = false)
     private Integer finalScore = 0;
 }
+

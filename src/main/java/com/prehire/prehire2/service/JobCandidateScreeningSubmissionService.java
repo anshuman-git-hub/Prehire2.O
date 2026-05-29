@@ -1,5 +1,6 @@
 package com.prehire.prehire2.service;
 
+import com.prehire.prehire2.dto.ScreeningSubmissionDetailResponse;
 import com.prehire.prehire2.dto.ScreeningSubmissionRequest;
 import com.prehire.prehire2.dto.ScreeningSubmissionResponse;
 import com.prehire.prehire2.entity.Candidate;
@@ -14,8 +15,8 @@ import com.prehire.prehire2.repository.JobCandidateScreeningSubmissionRepository
 import com.prehire.prehire2.repository.JobRepository;
 import com.prehire.prehire2.repository.JobScreeningQuestionRepository;
 import com.prehire.prehire2.repository.TenantRepository;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,25 +34,29 @@ public class JobCandidateScreeningSubmissionService {
 
     // ── existing read methods ──────────────────────────────────────────────
 
-    public JobCandidateScreeningSubmission getSubmissionById(UUID id) {
+    public JobCandidateScreeningSubmission getSubmissionById(Long id) {
         return jobCandidateScreeningSubmissionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Screening submission not found: " + id));
     }
 
-    public List<JobCandidateScreeningSubmission> getSubmissionsByJob(UUID jobId) {
-        return jobCandidateScreeningSubmissionRepository.findByJob_Id(jobId);
+    public List<ScreeningSubmissionDetailResponse> getSubmissionsByJob(Long jobId) {
+        return jobCandidateScreeningSubmissionRepository.findByJob_Id(jobId)
+                .stream().map(ScreeningSubmissionDetailResponse::from).toList();
     }
 
-    public List<JobCandidateScreeningSubmission> getSubmissionsByCandidate(UUID candidateId) {
-        return jobCandidateScreeningSubmissionRepository.findByCandidate_Id(candidateId);
+    public List<ScreeningSubmissionDetailResponse> getSubmissionsByCandidate(Long candidateId) {
+        return jobCandidateScreeningSubmissionRepository.findByCandidate_Id(candidateId)
+                .stream().map(ScreeningSubmissionDetailResponse::from).toList();
     }
 
-    public List<JobCandidateScreeningSubmission> getSubmissionsByJobAndCandidate(UUID jobId, UUID candidateId) {
-        return jobCandidateScreeningSubmissionRepository.findByJob_IdAndCandidate_Id(jobId, candidateId);
+    public List<ScreeningSubmissionDetailResponse> getSubmissionsByJobAndCandidate(Long jobId, Long candidateId) {
+        return jobCandidateScreeningSubmissionRepository.findByJob_IdAndCandidate_Id(jobId, candidateId)
+                .stream().map(ScreeningSubmissionDetailResponse::from).toList();
     }
 
-    public List<JobCandidateScreeningSubmission> getSubmissionsByQuestion(UUID questionId) {
-        return jobCandidateScreeningSubmissionRepository.findByQuestion_Id(questionId);
+    public List<ScreeningSubmissionDetailResponse> getSubmissionsByQuestion(Long questionId) {
+        return jobCandidateScreeningSubmissionRepository.findByQuestion_Id(questionId)
+                .stream().map(ScreeningSubmissionDetailResponse::from).toList();
     }
 
     // ── submit ────────────────────────────────────────────────────────────
@@ -107,6 +112,7 @@ public class JobCandidateScreeningSubmissionService {
                         ? answer.getSelectedOptions().toArray(new String[0])
                         : null
         );
+        submission.setSubmittedAt(LocalDateTime.now()); // set manually — not via @CreatedDate
 
         return submission;
     }
@@ -127,3 +133,4 @@ public class JobCandidateScreeningSubmissionService {
         }
     }
 }
+

@@ -6,3 +6,4 @@ public enum EmploymentType {
     CONTRACT,
     INTERNSHIP
 }
+

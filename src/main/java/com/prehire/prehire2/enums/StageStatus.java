@@ -7,3 +7,4 @@ public enum StageStatus {
     FAILED,
     SKIPPED
 }
+

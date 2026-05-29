@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -28,9 +27,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class JobCandidateScreeningSubmission {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
@@ -55,7 +54,6 @@ public class JobCandidateScreeningSubmission {
     @Column(name = "selected_options", columnDefinition = "text[]")
     private String[] selectedOptions;
 
-    @CreatedDate
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private LocalDateTime submittedAt;
 
@@ -67,3 +65,4 @@ public class JobCandidateScreeningSubmission {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
+

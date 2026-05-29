@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +16,9 @@ import lombok.Setter;
 public class Stage extends BaseCreatedEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
@@ -36,3 +35,4 @@ public class Stage extends BaseCreatedEntity {
     @Column(name = "is_terminal", nullable = false)
     private Boolean terminal = false;
 }
+

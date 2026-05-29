@@ -12,7 +12,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -26,9 +25,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class JobCandidateQuestionResponse {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "candidate_test_id", nullable = false)
@@ -63,3 +62,4 @@ public class JobCandidateQuestionResponse {
     @Column(name = "answered_at", nullable = false, updatable = false)
     private LocalDateTime answeredAt;
 }
+

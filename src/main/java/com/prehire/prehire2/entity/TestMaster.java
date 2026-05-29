@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,9 +20,9 @@ import lombok.Setter;
 public class TestMaster extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tenant_id", nullable = false)
@@ -61,3 +60,4 @@ public class TestMaster extends BaseAuditEntity {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 }
+

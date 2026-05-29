@@ -3,12 +3,12 @@ package com.prehire.prehire2.repository;
 import com.prehire.prehire2.entity.User;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByEmailAndTenant_Id(String email, UUID tenantId);
+    Optional<User> findByEmailAndTenant_Id(String email, Long tenantId);
 
-    List<User> findByTenant_Id(UUID tenantId);
+    List<User> findByTenant_Id(Long tenantId);
 }
+

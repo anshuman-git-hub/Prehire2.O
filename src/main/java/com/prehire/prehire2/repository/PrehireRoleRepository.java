@@ -10,3 +10,4 @@ public interface PrehireRoleRepository extends JpaRepository<PrehireRole, Long> 
 
     boolean existsByName(String name);
 }
+

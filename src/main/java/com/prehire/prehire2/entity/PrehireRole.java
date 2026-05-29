@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Map;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -20,9 +19,9 @@ import org.hibernate.type.SqlTypes;
 public class PrehireRole extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
@@ -40,3 +39,4 @@ public class PrehireRole extends BaseAuditEntity {
     @Column(name = "is_system_role", nullable = false)
     private Boolean systemRole = true;
 }
+

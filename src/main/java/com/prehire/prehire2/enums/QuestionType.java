@@ -6,3 +6,4 @@ public enum QuestionType {
     NUMERIC,
     MULTIPLE_CHOICE
 }
+

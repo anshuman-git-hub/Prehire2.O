@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,9 +19,9 @@ import lombok.Setter;
 public class Tenant extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
@@ -38,8 +37,9 @@ public class Tenant extends BaseAuditEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_plan", nullable = false, columnDefinition = "subscription_plan_enum")
-    private SubscriptionPlan subscriptionPlan = SubscriptionPlan.free;
+    private SubscriptionPlan subscriptionPlan = SubscriptionPlan.FREE;
 
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 }
+

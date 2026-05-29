@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,9 +20,9 @@ import lombok.Setter;
 public class TestSkillMapping extends BaseCreatedEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private UUID id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "test_id", nullable = false)
@@ -41,3 +40,4 @@ public class TestSkillMapping extends BaseCreatedEntity {
     @Column(name = "weightage_percentage", precision = 5, scale = 2)
     private BigDecimal weightagePercentage;
 }
+

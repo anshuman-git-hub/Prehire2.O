@@ -5,3 +5,4 @@ public enum InterviewType {
     OFFLINE,
     TELEPHONIC
 }
+

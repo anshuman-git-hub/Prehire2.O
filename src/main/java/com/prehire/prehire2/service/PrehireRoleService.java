@@ -28,3 +28,4 @@ public class PrehireRoleService {
         return prehireRoleRepository.existsByName(name);
     }
 }
+

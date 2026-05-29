@@ -5,3 +5,4 @@ public enum EmailStatus {
     DELIVERED,
     FAILED
 }
+

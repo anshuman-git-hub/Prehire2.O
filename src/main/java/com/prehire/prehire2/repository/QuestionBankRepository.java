@@ -2,12 +2,11 @@ package com.prehire.prehire2.repository;
 
 import com.prehire.prehire2.entity.QuestionBank;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID> {
+public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long> {
 
-    List<QuestionBank> findByTestSkillMapping_Id(UUID testSkillMappingId);
+    List<QuestionBank> findByTestSkillMapping_Id(Long testSkillMappingId);
 
     List<QuestionBank> findBySkillNameIgnoreCase(String skillName);
 
@@ -15,3 +14,4 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
 
     List<QuestionBank> findByDifficultyLevel(String difficultyLevel);
 }
+
